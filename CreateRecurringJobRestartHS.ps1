@@ -53,7 +53,7 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 #   ---***^^^   Set up SFTP job   ^^^***---   #
 $jobName="CheckAndRestartHomeSeer"
-#Remove job if it already exists
+$numberOfMinutesBetweenChecking=5
 
 $SFtpTriggerTime=(get-date)
 #Some extra fiddling to get the job to start exactly every 5 mins (00,05,10,15 etc)
@@ -61,7 +61,7 @@ $minutesToAdd=(5- ((get-date).Minute%5))
 
 $SFtpTriggerTime=$SFtpTriggerTime.AddMinutes($minutesToAdd).AddSeconds(-$SFtpTriggerTime.Second)
 
-$SFtpTrigger = New-JobTrigger -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration ([timeSpan]::maxvalue) -At $SFtpTriggerTime -Once 
+$SFtpTrigger = New-JobTrigger -RepetitionInterval (New-TimeSpan -Minutes $numberOfMinutesBetweenChecking) -RepetitionDuration ([timeSpan]::maxvalue) -At $SFtpTriggerTime -Once 
 
 #$argumentlist=$BasePath
 
