@@ -51,23 +51,23 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 }
 
 
-#   ---***^^^   Set up SFTP job   ^^^***---   #
+#   ---***^^^   Set up job   ^^^***---   #
 $jobName="CheckAndRestartHomeSeer"
 $numberOfMinutesBetweenChecking=5
 
-$SFtpTriggerTime=(get-date)
+$TriggerTime=(get-date)
 #Some extra fiddling to get the job to start exactly every 5 mins (00,05,10,15 etc)
 $minutesToAdd=(5- ((get-date).Minute%5))
 
-$SFtpTriggerTime=$SFtpTriggerTime.AddMinutes($minutesToAdd).AddSeconds(-$SFtpTriggerTime.Second)
+$TriggerTime=$TriggerTime.AddMinutes($minutesToAdd).AddSeconds(-$TriggerTime.Second)
 
-$SFtpTrigger = New-JobTrigger -RepetitionInterval (New-TimeSpan -Minutes $numberOfMinutesBetweenChecking) -RepetitionDuration ([timeSpan]::maxvalue) -At $SFtpTriggerTime -Once 
+$Trigger = New-JobTrigger -RepetitionInterval (New-TimeSpan -Minutes $numberOfMinutesBetweenChecking) -RepetitionDuration ([timeSpan]::maxvalue) -At $TriggerTime -Once 
 
 #$argumentlist=$BasePath
 
 $scriptPath=(Join-Path  "C:\Program Files (x86)\HomeSeer HS3\PSScripts" "CheckIfHomeseerIsRunning.ps1")
 
-Add-ScheduledJobWithRemoveOfOldIfExists -jobNameToAdd $jobName -scriptPath $scriptPath -jobTrigger $SFtpTrigger #-mycreds $mycreds #-argumentlist $argumentlist
+Add-ScheduledJobWithRemoveOfOldIfExists -jobNameToAdd $jobName -scriptPath $scriptPath -jobTrigger $Trigger #-mycreds $mycreds #-argumentlist $argumentlist
 
 
 New-EventLog -LogName HomeseerRestart -Source HomeseerRestart -ErrorVariable ev -ErrorAction SilentlyContinue
