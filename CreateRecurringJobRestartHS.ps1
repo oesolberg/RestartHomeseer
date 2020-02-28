@@ -1,7 +1,3 @@
-
-
-
-
 function Add-ScheduledJobWithRemoveOfOldIfExists 
 {
 	
@@ -10,12 +6,9 @@ function Add-ScheduledJobWithRemoveOfOldIfExists
 		[Parameter(Position=0)]
 		[string]$jobNameToAdd,
 		[string]$scriptPath,
-		[Microsoft.PowerShell.ScheduledJob.ScheduledJobTrigger]$jobTrigger#,
-		#[System.Management.Automation.PSCredential]$mycreds,
-		#[Parameter(Mandatory=$false)]
-		#$argumentlist
+		[Microsoft.PowerShell.ScheduledJob.ScheduledJobTrigger]$jobTrigger
 	)
-		
+	#Write-Host 	$jobNameToAdd
 	try
 	{
 		$test=(Get-ScheduledJob -Name $jobNameToAdd -ErrorAction Stop -ErrorVariable ev)
@@ -31,14 +24,8 @@ function Add-ScheduledJobWithRemoveOfOldIfExists
 
 	$jobOption=New-ScheduledJobOption -StartIfOnBattery -RunElevated 
 
-    if($argumentlist -ne $null)
-    {
-	    Register-ScheduledJob –Name $jobNameToAdd –FilePath $scriptPath -Credential $mycreds -Trigger $jobTrigger -ScheduledJobOption $jobOption -ArgumentList $argumentlist
-    }
-    else
-    {
-        Register-ScheduledJob –Name $jobNameToAdd –FilePath $scriptPath -Credential $mycreds -Trigger $jobTrigger -ScheduledJobOption $jobOption 
-    }
+    Register-ScheduledJob -Name $jobNameToAdd -FilePath $scriptPath -Trigger $jobTrigger -ScheduledJobOption $jobOption
+
 }
 
 
@@ -52,7 +39,7 @@ If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 
 #   ---***^^^   Set up job   ^^^***---   #
-$jobName="CheckAndRestartHomeSeer"
+$jobName='CheckAndRestartHomeSeer'
 $numberOfMinutesBetweenChecking=5
 
 $TriggerTime=(get-date)
@@ -63,22 +50,20 @@ $TriggerTime=$TriggerTime.AddMinutes($minutesToAdd).AddSeconds(-$TriggerTime.Sec
 
 $Trigger = New-JobTrigger -RepetitionInterval (New-TimeSpan -Minutes $numberOfMinutesBetweenChecking) -RepetitionDuration ([timeSpan]::maxvalue) -At $TriggerTime -Once 
 
-#$argumentlist=$BasePath
-
 $scriptPath=(Join-Path  "C:\Program Files (x86)\HomeSeer HS3\PSScripts" "CheckIfHomeseerIsRunning.ps1")
 
-Add-ScheduledJobWithRemoveOfOldIfExists -jobNameToAdd $jobName -scriptPath $scriptPath -jobTrigger $Trigger #-mycreds $mycreds #-argumentlist $argumentlist
+Add-ScheduledJobWithRemoveOfOldIfExists -jobNameToAdd $jobName -scriptPath $scriptPath -jobTrigger $Trigger 
 
 
-New-EventLog -LogName HomeseerRestart -Source HomeseerRestart -ErrorVariable ev -ErrorAction SilentlyContinue
-if($ev -ne $null)
-{
-    Write-Host -ForegroundColor RED ($ev.Exception.ToString())
-}
+try
+	{
+		New-EventLog -LogName HomeseerRestart -Source HomeseerRestart -ErrorVariable ev -ErrorAction SilentlyContinue
+		
+	}
+	catch
+	{
+		Write-Host ("Event registration error: {0}" -f $ev.errorRecord.Exception.ToString())
+	}
+
 
 Limit-EventLog -LogName HomeseerRestart -Maximumsize 4096KB -ErrorVariable ev -ErrorAction SilentlyContinue
-if($ev -ne $null)
-{
-    Write-Host -ForegroundColor RED ($ev.Exception.ToString())
-}
-
